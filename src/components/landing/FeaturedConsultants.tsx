@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -153,8 +154,10 @@ export function FeaturedConsultants() {
                   </Badge>
                 </div>
                 
-                <Button className="w-full bg-therapy-gradient hover:opacity-90" variant="outline">
-                  Connect with {consultant.full_name?.split(' ')[0] || 'Consultant'}
+                <Button className="w-full bg-therapy-gradient hover:opacity-90" variant="outline" asChild>
+                  <Link to="/consultants">
+                    Connect with {consultant.full_name?.split(' ')[0] || 'Consultant'}
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
