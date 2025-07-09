@@ -189,16 +189,10 @@ export const ConsultantsSection = () => {
                       {consultant.business_name}
                     </p>
                     
-                    <div className="flex items-center gap-1 mb-3">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-medium">4.8</span>
-                      <span className="text-xs text-muted-foreground">(24)</span>
-                    </div>
-                    
-                    <div className="flex gap-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-green-600">
+                        <span className="text-xs text-green-600 font-medium">
                           {autoBookedConsultants.has(consultant.id) ? 'Auto-booked' : 'Monitoring'}
                         </span>
                       </div>
