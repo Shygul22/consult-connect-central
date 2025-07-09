@@ -101,8 +101,13 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
     },
     onSuccess: (booking) => {
       console.log('Booking created successfully:', booking);
-      toast.success('Booking request submitted successfully!', {
-        description: 'You will receive a confirmation once approved.',
+      toast.success('Booking Request Submitted!', {
+        description: 'Your appointment request has been sent to the consultant. You will receive a confirmation email once approved.',
+        duration: 8000,
+        action: {
+          label: "View Bookings",
+          onClick: () => window.location.href = '/client'
+        }
       });
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));

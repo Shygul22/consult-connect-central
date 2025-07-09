@@ -116,17 +116,31 @@ const BookingPage = () => {
       </div>
 
       {recentBooking && (
-        <Card className="mb-4 sm:mb-6 border-green-200 bg-green-50">
+        <Card className="mb-4 sm:mb-6 border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-start sm:items-center gap-3">
-              <CheckCircle className="h-4 sm:h-5 w-4 sm:w-5 text-green-600 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5 sm:mt-0" />
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-green-800 text-sm sm:text-base">
-                  Booking request sent for {recentBooking.consultant}
+                <p className="font-semibold text-green-800 dark:text-green-200 text-sm sm:text-base mb-1">
+                  ✅ Booking Request Submitted Successfully!
                 </p>
-                <p className="text-xs sm:text-sm text-green-600 break-words">
-                  {recentBooking.date.toLocaleDateString()} at {recentBooking.time}
+                <p className="text-sm text-green-700 dark:text-green-300 mb-2">
+                  <strong>Consultant:</strong> {recentBooking.consultant}
                 </p>
+                <p className="text-sm text-green-700 dark:text-green-300 mb-2">
+                  <strong>Date & Time:</strong> {recentBooking.date.toLocaleDateString()} at {recentBooking.time}
+                </p>
+                <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg mt-3">
+                  <p className="text-xs sm:text-sm text-green-800 dark:text-green-200 font-medium mb-1">
+                    📋 Next Steps:
+                  </p>
+                  <ul className="text-xs text-green-700 dark:text-green-300 space-y-1">
+                    <li>• Your consultant will review and confirm your appointment</li>
+                    <li>• You'll receive a confirmation email with meeting details</li>
+                    <li>• Meeting link will be provided once confirmed</li>
+                    <li>• You can view your bookings in your client dashboard</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </CardContent>
