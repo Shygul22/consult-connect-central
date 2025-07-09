@@ -3,7 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClientBookingList } from '@/components/client/ClientBookingList';
 import { ConsultantBookingList } from '@/components/consultant/ConsultantBookingList';
 import { NotificationList } from '@/components/notifications/NotificationList';
-import { QuickActions } from '@/components/client/QuickActions';
 import { ProgressTracker } from '@/components/client/ProgressTracker';
 import { OnboardingModal } from '@/components/client/OnboardingModal';
 import { useQuery } from '@tanstack/react-query';
@@ -80,7 +79,6 @@ const DashboardPage = () => {
           <TabsContent value="client">
             <div className="space-y-4 sm:space-y-6 lg:space-y-8">
               <NotificationList />
-              <QuickActions />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                   <ClientBookingList />
@@ -111,17 +109,14 @@ const DashboardPage = () => {
           <NotificationList />
           
           {isClient && (
-            <>
-              <QuickActions />
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                  <ClientBookingList />
-                </div>
-                <div className="space-y-4 sm:space-y-6">
-                  <ProgressTracker todos={[]} bookings={bookings} />
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                <ClientBookingList />
               </div>
-            </>
+              <div className="space-y-4 sm:space-y-6">
+                <ProgressTracker todos={[]} bookings={bookings} />
+              </div>
+            </div>
           )}
           
           {isConsultant && <ConsultantBookingList />}
