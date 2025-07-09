@@ -17,12 +17,13 @@ interface BookingCalendarProps {
     full_name: string;
     business_name: string;
   }>;
+  preSelectedConsultantId?: string;
   onBooking: (consultantId: string, date: Date, time: string) => void;
 }
 
-export const BookingCalendar = ({ consultants, onBooking }: BookingCalendarProps) => {
+export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBooking }: BookingCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedConsultant, setSelectedConsultant] = useState<string>('');
+  const [selectedConsultant, setSelectedConsultant] = useState<string>(preSelectedConsultantId || '');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
