@@ -135,7 +135,7 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-2 hidden">
             <label className="text-sm font-medium">Consultant Auto-Booking</label>
             <div className="space-y-3">
               {consultants.map((consultant) => {
