@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { BookingCalendar } from '@/components/client/BookingCalendar';
@@ -25,6 +25,7 @@ const fetchConsultants = async (): Promise<Profile[]> => {
 };
 
 const BookingPage = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const preSelectedConsultant = location.state?.consultant;
   
@@ -145,10 +146,10 @@ const BookingPage = () => {
                   </ul>
                 </div>
                 <Button 
-                  onClick={() => setRecentBooking(null)}
+                  onClick={() => navigate('/dashboard')}
                   className="w-full"
                 >
-                  Continue
+                  Continue to Dashboard
                 </Button>
               </div>
             </CardContent>
