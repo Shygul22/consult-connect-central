@@ -10,14 +10,18 @@ import { BlogSection } from "@/components/landing/BlogSection";
 
 const Index = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <InteractiveNavigation />
-      <DynamicHero />
-      <InteractiveStats />
-      <ServiceCategories />
-      <FeaturedConsultants />
-      <BlogSection />
-      <CallToAction />
+      <main className="flex-1">
+        <DynamicHero />
+        <div className="space-y-16 md:space-y-24 lg:space-y-32">
+          <InteractiveStats />
+          <ServiceCategories />
+          <FeaturedConsultants />
+          <BlogSection />
+          <CallToAction />
+        </div>
+      </main>
       <ScrollToTop />
     </div>
   );

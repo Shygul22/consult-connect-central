@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navItems = [
@@ -55,11 +55,15 @@ export function InteractiveNavigation() {
           : 'bg-transparent'
       }`}
     >
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
         <Link 
           to="/" 
           className="flex items-center gap-2 text-xl font-bold transition-colors hover:text-primary/90"
         >
+          <Heart className="h-6 w-6 sm:h-7 sm:w-7 text-calming-green" />
+          <span className="hidden sm:inline-block font-serif">ZenJourney</span>
+          <span className="sm:hidden text-base font-bold font-serif">ZJ</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -89,8 +93,9 @@ export function InteractiveNavigation() {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="h-10 w-10"
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
@@ -98,7 +103,7 @@ export function InteractiveNavigation() {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-md border-b shadow-therapy">
-          <nav className="container py-4 space-y-2">
+          <nav className="container mx-auto py-4 space-y-2 px-4">
             {navItems.map((item) => (
               <button
                 key={item.name}
