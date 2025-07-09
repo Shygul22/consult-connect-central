@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
@@ -105,9 +104,7 @@ export function DynamicHero() {
             <Link to="/client">📘 Book a Career Clarity Session</Link>
           </Button>
           <Button asChild size="lg" variant="secondary" className="text-lg px-8 py-6 bg-white/20 backdrop-blur-sm hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
-            <a href="https://wa.me/919092406569" target="_blank" rel="noopener noreferrer">
-              🔍 Free Assessment
-            </a>
+            <Link to="/client">🔍 Free Assessment</Link>
           </Button>
         </div>
 
