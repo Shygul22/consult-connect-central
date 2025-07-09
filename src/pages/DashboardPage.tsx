@@ -3,7 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClientBookingList } from '@/components/client/ClientBookingList';
 import { ConsultantBookingList } from '@/components/consultant/ConsultantBookingList';
 import { NotificationList } from '@/components/notifications/NotificationList';
-import { TodoList } from '@/components/client/TodoList';
 import { QuickActions } from '@/components/client/QuickActions';
 import { ProgressTracker } from '@/components/client/ProgressTracker';
 import { OnboardingModal } from '@/components/client/OnboardingModal';
@@ -43,21 +42,6 @@ const DashboardPage = () => {
       setShowOnboarding(true);
     }
   }, [isClient, questionnaire, user?.id]);
-
-  // Fetch todos for progress tracking
-  const { data: todos = [] } = useQuery({
-    queryKey: ['client-todos', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('client_todos')
-        .select('*')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user && isClient,
-  });
 
   // Fetch bookings for progress tracking
   const { data: bookings = [] } = useQuery({
@@ -100,10 +84,9 @@ const DashboardPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                   <ClientBookingList />
-                  <TodoList />
                 </div>
                 <div className="space-y-4 sm:space-y-6">
-                  <ProgressTracker todos={todos} bookings={bookings} />
+                  <ProgressTracker todos={[]} bookings={bookings} />
                 </div>
               </div>
             </div>
@@ -133,10 +116,9 @@ const DashboardPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                   <ClientBookingList />
-                  <TodoList />
                 </div>
                 <div className="space-y-4 sm:space-y-6">
-                  <ProgressTracker todos={todos} bookings={bookings} />
+                  <ProgressTracker todos={[]} bookings={bookings} />
                 </div>
               </div>
             </>
