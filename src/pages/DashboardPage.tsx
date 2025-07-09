@@ -5,6 +5,7 @@ import { ConsultantBookingList } from '@/components/consultant/ConsultantBooking
 import { NotificationList } from '@/components/notifications/NotificationList';
 import { ProgressTracker } from '@/components/client/ProgressTracker';
 import { OnboardingModal } from '@/components/client/OnboardingModal';
+import { ConsultantsSection } from '@/components/client/ConsultantsSection';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -87,6 +88,7 @@ const DashboardPage = () => {
                   <ProgressTracker todos={[]} bookings={bookings} />
                 </div>
               </div>
+              <ConsultantsSection />
             </div>
           </TabsContent>
           <TabsContent value="consultant">
@@ -109,14 +111,17 @@ const DashboardPage = () => {
           <NotificationList />
           
           {isClient && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-                <ClientBookingList />
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                  <ClientBookingList />
+                </div>
+                <div className="space-y-4 sm:space-y-6">
+                  <ProgressTracker todos={[]} bookings={bookings} />
+                </div>
               </div>
-              <div className="space-y-4 sm:space-y-6">
-                <ProgressTracker todos={[]} bookings={bookings} />
-              </div>
-            </div>
+              <ConsultantsSection />
+            </>
           )}
           
           {isConsultant && <ConsultantBookingList />}
