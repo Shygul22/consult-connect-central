@@ -3,6 +3,7 @@ import { serviceCategories } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../ui/button";
 import { ArrowRight, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function ServiceCategories() {
   return (
@@ -67,10 +68,10 @@ export function ServiceCategories() {
               </CardContent>
               <div className="p-6 pt-0">
                 <Button className="w-full group/btn bg-therapy-gradient hover:opacity-90 shadow-calming" asChild>
-                  <a href="https://wa.me/919092406569" target="_blank" rel="noopener noreferrer">
+                  <Link to="/client">
                     Match Me with a Therapist
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </Card>
