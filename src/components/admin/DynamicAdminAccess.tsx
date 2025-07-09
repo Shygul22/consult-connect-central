@@ -35,12 +35,12 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
   if (rolesError) throw rolesError;
 
   // Get user emails from auth metadata
-  const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+  const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
   if (authError) throw authError;
 
   const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-    // Fix TypeScript inference by being explicit about the type
-    const authUser = authData.users?.find(user => user.id === profile.id) || null;
+    // Properly type the auth user to fix TypeScript error
+    const authUser = authResponse?.users?.find((user: any) => user.id === profile.id);
     const roles = userRoles?.filter(ur => ur.user_id === profile.id).map(ur => ur.role) || [];
     
     return {
