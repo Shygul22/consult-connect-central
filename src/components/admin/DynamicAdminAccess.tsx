@@ -39,7 +39,7 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
   if (authError) throw authError;
 
   const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-    const authUser = authData.users?.find(user => user.id === profile.id);
+    const authUser = authData.users ? authData.users.find(user => user.id === profile.id) : null;
     const roles = userRoles?.filter(ur => ur.user_id === profile.id).map(ur => ur.role) || [];
     
     return {
