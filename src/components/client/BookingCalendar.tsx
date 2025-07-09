@@ -88,7 +88,8 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
           return newSet;
         });
         toast.success('Auto-booked with available consultant!', {
-          description: `Automatically booked with ${consultant?.full_name}`,
+          description: `Automatically booked with ${consultant?.full_name} for ${format(new Date(booking.start_time), 'PPp')}`,
+          duration: 10000,
         });
         queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
         onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));
@@ -96,21 +97,29 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
     },
     onError: (error: Error, { consultantId }) => {
       setMonitoringConsultants(prev => new Set(prev).add(consultantId));
+      console.log(`No availability for consultant ${consultantId}:`, error.message);
     },
   });
 
-  // Auto-check for available consultants every 15 seconds
+  // Trigger immediate booking check when component mounts
   useEffect(() => {
-    if (!user || !consultants) return;
+    if (!user || !consultants || consultants.length === 0) return;
 
-    const interval = setInterval(() => {
+    // Immediate check on page load
+    const checkAllConsultants = () => {
       consultants.forEach(consultant => {
         if (!autoBookedConsultants.has(consultant.id)) {
           setMonitoringConsultants(prev => new Set(prev).add(consultant.id));
           autoBookConsultant({ consultantId: consultant.id });
         }
       });
-    }, 15000); // Check every 15 seconds
+    };
+
+    // Run immediately
+    checkAllConsultants();
+
+    // Continue monitoring every 10 seconds for new availability
+    const interval = setInterval(checkAllConsultants, 10000);
 
     return () => clearInterval(interval);
   }, [user, consultants, autoBookConsultant, autoBookedConsultants]);
@@ -167,15 +176,15 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-              Auto-Booking Information
+          <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
+              ⚡ Instant Booking System
             </h3>
-            <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• System monitors consultants every 15 seconds</li>
-              <li>• Automatically books first available time slot</li>
-              <li>• No manual intervention required</li>
-              <li>• Instant notifications on successful booking</li>
+            <ul className="text-xs text-green-800 dark:text-green-200 space-y-1">
+              <li>• Immediate scan triggered on page load</li>
+              <li>• Books first available time slot instantly</li>
+              <li>• Continues monitoring every 10 seconds</li>
+              <li>• Detailed notifications with booking time</li>
             </ul>
           </div>
         </CardContent>
@@ -202,21 +211,21 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
                 </div>
               </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Auto-Booking Active</h3>
+            <h3 className="text-lg font-semibold mb-2">Auto-Booking System Active</h3>
             <p className="text-sm text-muted-foreground mb-4">
               {autoBookedConsultants.size > 0 
-                ? `${autoBookedConsultants.size} consultant(s) auto-booked successfully`
-                : 'Monitoring consultants for availability...'
+                ? `${autoBookedConsultants.size} consultant(s) successfully booked`
+                : 'Scanning all consultants for immediate availability...'
               }
             </p>
             <div className="flex justify-center gap-4 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>Booked: {autoBookedConsultants.size}</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Monitoring: {monitoringConsultants.size}</span>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Scanning: {monitoringConsultants.size}</span>
               </div>
             </div>
           </div>
