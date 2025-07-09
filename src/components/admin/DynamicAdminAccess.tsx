@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,9 +39,8 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
   if (authError) throw authError;
 
   const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-    const authUser = authData.users && authData.users.length > 0 
-      ? authData.users.find(user => user.id === profile.id) 
-      : null;
+    // Fix TypeScript inference by being explicit about the type
+    const authUser = authData.users?.find(user => user.id === profile.id) || null;
     const roles = userRoles?.filter(ur => ur.user_id === profile.id).map(ur => ur.role) || [];
     
     return {
