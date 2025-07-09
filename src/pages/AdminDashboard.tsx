@@ -9,6 +9,7 @@ import { DynamicAdminDashboard } from '@/components/admin/DynamicAdminDashboard'
 import { ConsultantManager } from '@/components/admin/ConsultantManager';
 import { LandingPageManager } from '@/components/admin/LandingPageManager';
 import { BlogManager } from '@/components/admin/BlogManager';
+import { DynamicAdminAccess } from '@/components/admin/DynamicAdminAccess';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AdminDashboardPage = () => {
@@ -20,7 +21,7 @@ const AdminDashboardPage = () => {
       </header>
       
       <Tabs defaultValue="dynamic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="grid w-full grid-cols-11">
           <TabsTrigger value="dynamic">Dynamic</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="consultants">Consultants</TabsTrigger>
@@ -30,6 +31,7 @@ const AdminDashboardPage = () => {
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="bookings">Bookings</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="admin-access">Admin Access</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
         </TabsList>
         
@@ -67,6 +69,10 @@ const AdminDashboardPage = () => {
         
         <TabsContent value="users">
           <UserList />
+        </TabsContent>
+        
+        <TabsContent value="admin-access">
+          <DynamicAdminAccess />
         </TabsContent>
         
         <TabsContent value="database">
