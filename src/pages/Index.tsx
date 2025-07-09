@@ -6,7 +6,6 @@ import { FeaturedConsultants } from "@/components/landing/FeaturedConsultants";
 import { InteractiveStats } from "@/components/landing/InteractiveStats";
 import { InteractiveNavigation } from "@/components/landing/InteractiveNavigation";
 import { ScrollToTop } from "@/components/landing/ScrollToTop";
-import { Footer } from "@/components/landing/Footer";
 import { BlogSection } from "@/components/landing/BlogSection";
 
 const Index = () => {
@@ -19,7 +18,6 @@ const Index = () => {
       <FeaturedConsultants />
       <BlogSection />
       <CallToAction />
-      <Footer />
       <ScrollToTop />
     </div>
   );
