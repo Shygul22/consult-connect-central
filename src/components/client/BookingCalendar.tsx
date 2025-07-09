@@ -37,49 +37,66 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedConsultant, setSelectedConsultant] = useState<string>(preSelectedConsultantId || '');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
   const queryClient = useQueryClient();
+  
+  const isAdmin = roles.includes('admin');
 
   // Fetch availability for selected consultant and date
   const { data: availableSlots, isLoading: slotsLoading } = useQuery({
-    queryKey: ['availability', selectedConsultant, selectedDate],
+    queryKey: ['availability', isAdmin ? selectedConsultant : 'auto', selectedDate],
     queryFn: async () => {
-      if (!selectedConsultant || !selectedDate) return [];
+      if (!selectedDate) return [];
       
       const startOfSelectedDate = startOfDay(selectedDate);
       const endOfSelectedDate = addHours(startOfSelectedDate, 24);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('consultant_availability')
         .select('*')
-        .eq('consultant_id', selectedConsultant)
         .eq('is_booked', false)
         .gte('start_time', startOfSelectedDate.toISOString())
         .lt('start_time', endOfSelectedDate.toISOString())
         .order('start_time', { ascending: true });
+
+      // For admins, filter by selected consultant if one is chosen
+      // For clients, get availability from all consultants
+      if (isAdmin && selectedConsultant) {
+        query = query.eq('consultant_id', selectedConsultant);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data || [];
     },
-    enabled: !!selectedConsultant && !!selectedDate,
+    enabled: !!selectedDate && (isAdmin ? true : true), // Always enabled for clients, conditional for admins
   });
 
 
   const { mutate: manualBooking, isPending: isBookingPending } = useMutation({
     mutationFn: ({ availabilityId }: { availabilityId: string }) => {
       if (!user) throw new Error('User not authenticated');
-      return manualBookConsultant(selectedConsultant, availabilityId, user.id);
+      // For clients, find the consultant from the selected slot
+      const selectedSlot = availableSlots?.find(slot => slot.id === availabilityId);
+      const consultantIdToUse = isAdmin ? selectedConsultant : selectedSlot?.consultant_id;
+      
+      if (!consultantIdToUse) throw new Error('No consultant selected');
+      
+      return manualBookConsultant(consultantIdToUse, availabilityId, user.id);
     },
     onSuccess: (booking) => {
       if (booking) {
-        const consultant = consultants?.find(c => c.id === selectedConsultant);
+        const selectedSlot = availableSlots?.find(slot => slot.id === selectedTimeSlot);
+        const consultantIdUsed = isAdmin ? selectedConsultant : selectedSlot?.consultant_id;
+        const consultant = consultants?.find(c => c.id === consultantIdUsed);
         toast.success('Successfully booked!', {
           description: `Booked with ${consultant?.full_name} for ${format(new Date(booking.start_time), 'PPp')}`,
           duration: 8000,
         });
         queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
-        queryClient.invalidateQueries({ queryKey: ['availability', selectedConsultant, selectedDate] });
-        onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));
+        queryClient.invalidateQueries({ queryKey: ['availability', isAdmin ? selectedConsultant : 'auto', selectedDate] });
+        onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'h:mm a'));
         setSelectedTimeSlot('');
       }
     },
@@ -109,21 +126,34 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Consultant</label>
-            <Select value={selectedConsultant} onValueChange={setSelectedConsultant}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a consultant" />
-              </SelectTrigger>
-              <SelectContent>
-                {consultants.map((consultant) => (
-                  <SelectItem key={consultant.id} value={consultant.id}>
-                    {consultant.full_name} {consultant.business_name && `(${consultant.business_name})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isAdmin && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Consultant</label>
+              <Select value={selectedConsultant} onValueChange={setSelectedConsultant}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a consultant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {consultants.map((consultant) => (
+                    <SelectItem key={consultant.id} value={consultant.id}>
+                      {consultant.full_name} {consultant.business_name && `(${consultant.business_name})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {!isAdmin && (
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <h3 className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
+                🔒 Client Access
+              </h3>
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                You'll be automatically matched with an available consultant based on your needs and preferences.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Select Date</label>
@@ -131,12 +161,12 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              disabled={(date) => !isAdmin && date < new Date(new Date().setHours(0, 0, 0, 0))}
               className="rounded-md border"
             />
           </div>
 
-          {selectedConsultant && selectedDate && (
+          {(isAdmin ? selectedConsultant && selectedDate : selectedDate) && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Available Time Slots</label>
               {slotsLoading ? (
@@ -154,14 +184,14 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
                       onClick={() => setSelectedTimeSlot(slot.id)}
                       className="text-xs"
                     >
-                      {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
+                      {format(new Date(slot.start_time), 'h:mm a')} - {format(new Date(slot.end_time), 'h:mm a')}
                     </Button>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-6 text-sm text-muted-foreground space-y-2">
-                  <div>No available slots for {format(selectedDate, 'PPP')}</div>
-                  <div className="text-xs opacity-75">Try selecting a different date or consultant</div>
+                  <div>No available slots for {format(selectedDate!, 'PPP')}</div>
+                  <div className="text-xs opacity-75">Try selecting a different date{isAdmin ? ' or consultant' : ''}</div>
                 </div>
               )}
             </div>
@@ -177,10 +207,13 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
 
           <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
             <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-              📅 Book Your Consultation
+              📅 {isAdmin ? 'Admin Booking' : 'Book Your Consultation'}
             </h3>
             <p className="text-xs text-blue-800 dark:text-blue-200">
-              Select your preferred consultant and time slot based on availability
+              {isAdmin 
+                ? 'Select consultant, date, and time slot. You can book at any time without restrictions.'
+                : 'Select your preferred date and time slot. You\'ll be matched with an available consultant.'
+              }
             </p>
           </div>
         </CardContent>
