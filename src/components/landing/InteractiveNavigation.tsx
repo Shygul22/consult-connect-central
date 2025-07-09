@@ -60,7 +60,6 @@ export function InteractiveNavigation() {
           to="/" 
           className="flex items-center gap-2 text-xl font-bold transition-colors hover:text-primary/90"
         >
-          <span className="font-serif">ZenJourney</span>
         </Link>
 
         {/* Desktop Navigation */}
