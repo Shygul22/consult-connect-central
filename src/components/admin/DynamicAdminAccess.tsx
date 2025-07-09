@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,11 +35,11 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
   if (rolesError) throw rolesError;
 
   // Get user emails from auth metadata
-  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+  const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
   if (authError) throw authError;
 
   const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-    const authUser = authUsers.users.find(u => u.id === profile.id);
+    const authUser = authData.users?.find(user => user.id === profile.id);
     const roles = userRoles?.filter(ur => ur.user_id === profile.id).map(ur => ur.role) || [];
     
     return {
