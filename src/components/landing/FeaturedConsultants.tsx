@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -7,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Award, Users, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -165,8 +165,10 @@ export function FeaturedConsultants() {
           <p className="text-muted-foreground mb-6">
             Join hundreds of individuals who have found peace and transformation through our compassionate care
           </p>
-          <Button size="lg" className="bg-therapy-gradient hover:opacity-90 shadow-calming">
-            Meet All Our Guides
+          <Button size="lg" className="bg-therapy-gradient hover:opacity-90 shadow-calming" asChild>
+            <Link to="/consultants">
+              Meet All Our Guides
+            </Link>
           </Button>
         </div>
       </div>
