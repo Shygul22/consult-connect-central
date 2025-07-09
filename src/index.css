@@ -6,22 +6,22 @@
 @layer base {
   :root {
     /* Psychology & Counseling Theme - Light Mode */
-    --background: 217 32% 96%; /* Soft Cream/Off-white */
+    --background: 180 100% 98%; /* Very light healing teal */
     --foreground: 215 25% 27%; /* Deep Navy Blue */
 
-    --card: 0 0% 100%; /* Pure White */
+    --card: 180 50% 99%; /* Nearly white with teal hint */
     --card-foreground: 215 25% 27%; /* Deep Navy Blue */
 
-    --popover: 0 0% 100%; /* Pure White */
+    --popover: 180 50% 99%; /* Nearly white with teal hint */
     --popover-foreground: 215 25% 27%; /* Deep Navy Blue */
 
     --primary: 200 100% 40%; /* Calming Teal Blue */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 142 52% 96%; /* Very Light Sage Green */
+    --secondary: 159 60% 96%; /* Very Light Therapeutic Green */
     --secondary-foreground: 215 25% 27%; /* Deep Navy Blue */
 
-    --muted: 142 52% 96%; /* Very Light Sage Green */
+    --muted: 180 50% 95%; /* Light healing teal instead of gray */
     --muted-foreground: 215 13% 54%; /* Muted Navy */
 
     --accent: 159 60% 51%; /* Therapeutic Green */
@@ -30,8 +30,8 @@
     --destructive: 0 84% 60%; /* Soft Red for errors */
     --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 142 30% 88%; /* Light Sage Border */
-    --input: 142 30% 88%; /* Light Sage Input */
+    --border: 180 50% 85%; /* Light healing teal border */
+    --input: 180 50% 92%; /* Light healing teal input */
     --ring: 200 100% 40%; /* Calming Teal Blue */
 
     --radius: 0.75rem; /* Slightly more rounded for friendlier feel */
@@ -39,7 +39,7 @@
     /* Psychology specific colors */
     --therapy-blue: 200 100% 40%;
     --calming-green: 159 60% 51%;
-    --warm-sage: 142 52% 96%;
+    --warm-sage: 180 50% 95%;
     --trust-navy: 215 25% 27%;
     --healing-teal: 180 50% 60%;
   }
@@ -47,31 +47,31 @@
   .dark {
     /* Psychology & Counseling Theme - Dark Mode */
     --background: 215 25% 12%; /* Deep Navy Background */
-    --foreground: 217 32% 96%; /* Soft Cream Text */
+    --foreground: 180 50% 96%; /* Light healing teal text */
 
     --card: 215 25% 15%; /* Slightly lighter navy */
-    --card-foreground: 217 32% 96%; /* Soft Cream Text */
+    --card-foreground: 180 50% 96%; /* Light healing teal text */
 
     --popover: 215 25% 15%; /* Slightly lighter navy */
-    --popover-foreground: 217 32% 96%; /* Soft Cream Text */
+    --popover-foreground: 180 50% 96%; /* Light healing teal text */
 
     --primary: 180 50% 60%; /* Healing Teal */
     --primary-foreground: 215 25% 12%; /* Deep Navy */
 
     --secondary: 215 25% 20%; /* Dark Navy Secondary */
-    --secondary-foreground: 217 32% 96%; /* Soft Cream Text */
+    --secondary-foreground: 180 50% 96%; /* Light healing teal text */
 
-    --muted: 215 25% 20%; /* Dark Navy Muted */
-    --muted-foreground: 215 13% 70%; /* Light Muted Text */
+    --muted: 180 30% 25%; /* Dark healing teal instead of gray */
+    --muted-foreground: 180 30% 70%; /* Light healing teal text */
 
     --accent: 159 60% 51%; /* Therapeutic Green */
     --accent-foreground: 215 25% 12%; /* Deep Navy */
 
     --destructive: 0 62% 50%; /* Darker Red for errors */
-    --destructive-foreground: 217 32% 96%; /* Soft Cream Text */
+    --destructive-foreground: 180 50% 96%; /* Light healing teal text */
 
-    --border: 215 25% 25%; /* Dark Border */
-    --input: 215 25% 25%; /* Dark Input */
+    --border: 180 30% 30%; /* Dark healing teal border */
+    --input: 180 30% 30%; /* Dark healing teal input */
     --ring: 180 50% 60%; /* Healing Teal */
   }
 }

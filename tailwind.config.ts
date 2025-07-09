@@ -53,7 +53,7 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Psychology Theme Colors
+				// Psychology Theme Colors - removed gray/granite colors
 				'therapy-blue': 'hsl(var(--therapy-blue))',
 				'calming-green': 'hsl(var(--calming-green))',
 				'warm-sage': 'hsl(var(--warm-sage))',
