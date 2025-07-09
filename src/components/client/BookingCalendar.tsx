@@ -1,10 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,119 +21,108 @@ interface BookingCalendarProps {
   onBooking: (consultantId: string, date: Date, time: string) => void;
 }
 
+const checkAvailabilityAndAutoBook = async (consultantId: string, userId: string) => {
+  // Check if consultant has available slots
+  const { data: availability, error } = await supabase
+    .from('consultant_availability')
+    .select('*')
+    .eq('consultant_id', consultantId)
+    .eq('is_booked', false)
+    .gte('start_time', new Date().toISOString())
+    .order('start_time', { ascending: true })
+    .limit(1);
+
+  if (error || !availability || availability.length === 0) {
+    return null;
+  }
+
+  // Auto-book the first available slot
+  const availableSlot = availability[0];
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .insert({
+      client_id: userId,
+      consultant_id: consultantId,
+      availability_id: availableSlot.id,
+      start_time: availableSlot.start_time,
+      end_time: availableSlot.end_time,
+      type: 'online',
+      status: 'pending',
+    })
+    .select()
+    .single();
+
+  if (bookingError) {
+    throw new Error(bookingError.message);
+  }
+
+  // Mark availability as booked
+  await supabase
+    .from('consultant_availability')
+    .update({ is_booked: true })
+    .eq('id', availableSlot.id);
+
+  return booking;
+};
+
 export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBooking }: BookingCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedConsultant, setSelectedConsultant] = useState<string>(preSelectedConsultantId || '');
+  const [autoBookedConsultants, setAutoBookedConsultants] = useState<Set<string>>(new Set());
+  const [monitoringConsultants, setMonitoringConsultants] = useState<Set<string>>(new Set());
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Mock available time slots (in a real app, this would come from the availability API)
-  const availableSlots = [
-    '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'
-  ];
-
-  const { mutate: createBooking, isPending } = useMutation({
-    mutationFn: async ({ consultantId, date, time }: { consultantId: string; date: Date; time: string }) => {
+  const { mutate: autoBookConsultant } = useMutation({
+    mutationFn: ({ consultantId }: { consultantId: string }) => {
       if (!user) throw new Error('User not authenticated');
-
-      // First, ensure the user has a profile record
-      const { data: existingProfile, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (profileCheckError && profileCheckError.code === 'PGRST116') {
-        // Profile doesn't exist, create it
-        console.log('Creating profile for user:', user.id);
-        const { error: profileCreateError } = await supabase
-          .from('profiles')
-          .insert({
-            id: user.id,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown User',
-            avatar_url: user.user_metadata?.avatar_url || null,
-          });
-
-        if (profileCreateError) {
-          console.error('Error creating profile:', profileCreateError);
-          throw new Error(`Failed to create user profile: ${profileCreateError.message}`);
-        }
-      } else if (profileCheckError) {
-        console.error('Error checking profile:', profileCheckError);
-        throw new Error(`Profile check failed: ${profileCheckError.message}`);
-      }
-
-      const selectedDate = new Date(date);
-      const [hours, minutes] = time.split(':').map(Number);
-      selectedDate.setHours(hours, minutes, 0, 0);
-
-      const startTime = selectedDate.toISOString();
-      const endTime = new Date(selectedDate.getTime() + 60 * 60000).toISOString(); // 1 hour duration
-
-      console.log('Creating booking with data:', {
-        client_id: user.id,
-        consultant_id: consultantId,
-        start_time: startTime,
-        end_time: endTime,
-        type: 'online',
-        status: 'pending'
-      });
-
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .insert({
-          client_id: user.id,
-          consultant_id: consultantId,
-          start_time: startTime,
-          end_time: endTime,
-          type: 'online',
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating booking:', error);
-        throw new Error(error.message);
-      }
-
-      return booking;
+      return checkAvailabilityAndAutoBook(consultantId, user.id);
     },
-    onSuccess: (booking) => {
-      console.log('Booking created successfully:', booking);
-      toast.success('Booking Request Submitted!', {
-        description: 'Your appointment request has been sent to the consultant. You will receive a confirmation email once approved.',
-        duration: 8000,
-        action: {
-          label: "View Bookings",
-          onClick: () => window.location.href = '/client'
-        }
-      });
-      queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
-      onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));
+    onSuccess: (booking, { consultantId }) => {
+      if (booking) {
+        const consultant = consultants?.find(c => c.id === consultantId);
+        setAutoBookedConsultants(prev => new Set(prev).add(consultantId));
+        setMonitoringConsultants(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(consultantId);
+          return newSet;
+        });
+        toast.success('Auto-booked with available consultant!', {
+          description: `Automatically booked with ${consultant?.full_name}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+        onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));
+      }
     },
-    onError: (error: Error) => {
-      console.error('Booking failed:', error);
-      toast.error(`Booking failed: ${error.message}`);
+    onError: (error: Error, { consultantId }) => {
+      setMonitoringConsultants(prev => new Set(prev).add(consultantId));
     },
   });
 
-  const handleBooking = (time: string) => {
-    if (!selectedDate || !selectedConsultant) {
-      toast.error('Please select both a consultant and date first');
-      return;
-    }
+  // Auto-check for available consultants every 15 seconds
+  useEffect(() => {
+    if (!user || !consultants) return;
 
-    if (!user) {
-      toast.error('Please sign in to book an appointment');
-      return;
-    }
+    const interval = setInterval(() => {
+      consultants.forEach(consultant => {
+        if (!autoBookedConsultants.has(consultant.id)) {
+          setMonitoringConsultants(prev => new Set(prev).add(consultant.id));
+          autoBookConsultant({ consultantId: consultant.id });
+        }
+      });
+    }, 15000); // Check every 15 seconds
 
-    createBooking({
-      consultantId: selectedConsultant,
-      date: selectedDate,
-      time: time
-    });
+    return () => clearInterval(interval);
+  }, [user, consultants, autoBookConsultant, autoBookedConsultants]);
+
+  const getConsultantStatus = (consultantId: string) => {
+    if (autoBookedConsultants.has(consultantId)) {
+      return { status: 'booked', icon: CheckCircle, color: 'text-green-600', text: 'Auto-booked' };
+    }
+    if (monitoringConsultants.has(consultantId)) {
+      return { status: 'monitoring', icon: Clock, color: 'text-blue-600', text: 'Monitoring...' };
+    }
+    return { status: 'waiting', icon: AlertCircle, color: 'text-orange-600', text: 'Waiting' };
   };
 
   return (
@@ -142,42 +131,52 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <User className="h-4 sm:h-5 w-4 sm:w-5" />
-            Select Consultant & Date
+            Auto-Booking Status
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Choose Consultant</label>
-            <div className="space-y-2">
-              {consultants.map((consultant) => (
-                <Button
-                  key={consultant.id}
-                  variant={selectedConsultant === consultant.id ? 'default' : 'outline'}
-                  className="w-full justify-start h-auto py-3 px-3"
-                  onClick={() => setSelectedConsultant(consultant.id)}
-                >
-                  <div className="text-left min-w-0 flex-1">
-                    <div className="font-medium text-sm sm:text-base truncate">{consultant.full_name}</div>
-                    {consultant.business_name && (
-                      <div className="text-xs text-muted-foreground truncate">{consultant.business_name}</div>
-                    )}
+            <label className="text-sm font-medium">Consultant Auto-Booking</label>
+            <div className="space-y-3">
+              {consultants.map((consultant) => {
+                const statusInfo = getConsultantStatus(consultant.id);
+                const StatusIcon = statusInfo.icon;
+                
+                return (
+                  <div
+                    key={consultant.id}
+                    className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-left min-w-0 flex-1">
+                        <div className="font-medium text-sm truncate">{consultant.full_name}</div>
+                        {consultant.business_name && (
+                          <div className="text-xs text-muted-foreground truncate">{consultant.business_name}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
+                      <Badge variant="outline" className="text-xs">
+                        {statusInfo.text}
+                      </Badge>
+                    </div>
                   </div>
-                </Button>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Pick a Date</label>
-            <div className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
-                className="rounded-md border w-full max-w-sm"
-              />
-            </div>
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+              Auto-Booking Information
+            </h3>
+            <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1">
+              <li>• System monitors consultants every 15 seconds</li>
+              <li>• Automatically books first available time slot</li>
+              <li>• No manual intervention required</li>
+              <li>• Instant notifications on successful booking</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
@@ -186,37 +185,41 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Clock className="h-4 sm:h-5 w-4 sm:w-5" />
-            Available Time Slots
+            Booking Activity
           </CardTitle>
-          {selectedDate && (
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-            </p>
-          )}
         </CardHeader>
         <CardContent>
-          {!selectedDate || !selectedConsultant ? (
-            <div className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
-              Please select a consultant and date first
+          <div className="text-center py-6 sm:py-8">
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+                  <Clock className="h-8 w-8 text-primary" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">
+                    {autoBookedConsultants.size}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {availableSlots.map((time) => (
-                <Button
-                  key={time}
-                  variant="outline"
-                  className="h-16 sm:h-12 flex flex-col justify-center"
-                  onClick={() => handleBooking(time)}
-                  disabled={isPending}
-                >
-                  <span className="font-medium text-sm sm:text-base">{time}</span>
-                  <Badge variant="secondary" className="text-xs mt-1">
-                    {isPending ? 'Booking...' : 'Available'}
-                  </Badge>
-                </Button>
-              ))}
+            <h3 className="text-lg font-semibold mb-2">Auto-Booking Active</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {autoBookedConsultants.size > 0 
+                ? `${autoBookedConsultants.size} consultant(s) auto-booked successfully`
+                : 'Monitoring consultants for availability...'
+              }
+            </p>
+            <div className="flex justify-center gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Booked: {autoBookedConsultants.size}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Monitoring: {monitoringConsultants.size}</span>
+              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
