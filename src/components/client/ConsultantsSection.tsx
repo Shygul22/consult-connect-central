@@ -189,14 +189,7 @@ export const ConsultantsSection = () => {
                       {consultant.business_name}
                     </p>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-green-500" />
-                        <span className="text-xs text-green-600 font-medium">
-                          {autoBookedConsultants.has(consultant.id) ? 'Auto-booked' : 'Monitoring'}
-                        </span>
-                      </div>
-                      
+                    <div className="flex justify-end">
                       <Button asChild variant="outline" size="sm" className="h-7 text-xs">
                         <Link to="/chat" state={{ consultant }}>
                           <MessageCircle className="mr-1 h-3 w-3" />
