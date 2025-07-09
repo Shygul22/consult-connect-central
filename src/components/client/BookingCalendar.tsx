@@ -4,12 +4,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, User, CheckCircle, AlertCircle } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Clock, User, CheckCircle, AlertCircle, CalendarDays } from 'lucide-react';
+import { format, isSameDay, addHours, startOfDay } from 'date-fns';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface BookingCalendarProps {
   consultants: Array<{
@@ -65,13 +66,49 @@ const checkAvailabilityAndAutoBook = async (consultantId: string, userId: string
   return booking;
 };
 
+const manualBookConsultant = async (consultantId: string, availabilityId: string, userId: string) => {
+  const { data: booking, error } = await supabase
+    .rpc('book_consultation', { p_availability_id: availabilityId });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return booking;
+};
+
 export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBooking }: BookingCalendarProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedConsultant, setSelectedConsultant] = useState<string>(preSelectedConsultantId || '');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
   const [autoBookedConsultants, setAutoBookedConsultants] = useState<Set<string>>(new Set());
   const [monitoringConsultants, setMonitoringConsultants] = useState<Set<string>>(new Set());
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Fetch availability for selected consultant and date
+  const { data: availableSlots, isLoading: slotsLoading } = useQuery({
+    queryKey: ['availability', selectedConsultant, selectedDate],
+    queryFn: async () => {
+      if (!selectedConsultant || !selectedDate) return [];
+      
+      const startOfSelectedDate = startOfDay(selectedDate);
+      const endOfSelectedDate = addHours(startOfSelectedDate, 24);
+      
+      const { data, error } = await supabase
+        .from('consultant_availability')
+        .select('*')
+        .eq('consultant_id', selectedConsultant)
+        .eq('is_booked', false)
+        .gte('start_time', startOfSelectedDate.toISOString())
+        .lt('start_time', endOfSelectedDate.toISOString())
+        .order('start_time', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedConsultant && !!selectedDate,
+  });
 
   const { mutate: autoBookConsultant } = useMutation({
     mutationFn: ({ consultantId }: { consultantId: string }) => {
@@ -100,6 +137,39 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
       console.log(`No availability for consultant ${consultantId}:`, error.message);
     },
   });
+
+  const { mutate: manualBooking, isPending: isBookingPending } = useMutation({
+    mutationFn: ({ availabilityId }: { availabilityId: string }) => {
+      if (!user) throw new Error('User not authenticated');
+      return manualBookConsultant(selectedConsultant, availabilityId, user.id);
+    },
+    onSuccess: (booking) => {
+      if (booking) {
+        const consultant = consultants?.find(c => c.id === selectedConsultant);
+        toast.success('Successfully booked!', {
+          description: `Booked with ${consultant?.full_name} for ${format(new Date(booking.start_time), 'PPp')}`,
+          duration: 8000,
+        });
+        queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
+        queryClient.invalidateQueries({ queryKey: ['availability', selectedConsultant, selectedDate] });
+        onBooking(booking.consultant_id, new Date(booking.start_time), format(new Date(booking.start_time), 'HH:mm'));
+        setSelectedTimeSlot('');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error('Booking failed', {
+        description: error.message,
+      });
+    },
+  });
+
+  const handleManualBooking = () => {
+    if (!selectedTimeSlot) {
+      toast.error('Please select a time slot');
+      return;
+    }
+    manualBooking({ availabilityId: selectedTimeSlot });
+  };
 
   // Trigger immediate booking check when component mounts
   useEffect(() => {
@@ -193,41 +263,83 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Clock className="h-4 sm:h-5 w-4 sm:w-5" />
-            Booking Activity
+            <CalendarDays className="h-4 sm:h-5 w-4 sm:w-5" />
+            Manual Booking
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 sm:py-8">
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
-                  <Clock className="h-8 w-8 text-primary" />
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Consultant</label>
+            <Select value={selectedConsultant} onValueChange={setSelectedConsultant}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a consultant" />
+              </SelectTrigger>
+              <SelectContent>
+                {consultants.map((consultant) => (
+                  <SelectItem key={consultant.id} value={consultant.id}>
+                    {consultant.full_name} {consultant.business_name && `(${consultant.business_name})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Date</label>
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              className="rounded-md border"
+            />
+          </div>
+
+          {selectedConsultant && selectedDate && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Available Time Slots</label>
+              {slotsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Clock className="h-4 w-4 animate-spin" />
+                  <span className="ml-2 text-sm">Loading slots...</span>
                 </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs text-white font-bold">
-                    {autoBookedConsultants.size}
-                  </span>
+              ) : availableSlots && availableSlots.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {availableSlots.map((slot) => (
+                    <Button
+                      key={slot.id}
+                      variant={selectedTimeSlot === slot.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedTimeSlot(slot.id)}
+                      className="text-xs"
+                    >
+                      {format(new Date(slot.start_time), 'HH:mm')} - {format(new Date(slot.end_time), 'HH:mm')}
+                    </Button>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  No available slots for selected date
+                </div>
+              )}
             </div>
-            <h3 className="text-lg font-semibold mb-2">Auto-Booking System Active</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {autoBookedConsultants.size > 0 
-                ? `${autoBookedConsultants.size} consultant(s) successfully booked`
-                : 'Scanning all consultants for immediate availability...'
-              }
+          )}
+
+          <Button
+            onClick={handleManualBooking}
+            disabled={!selectedTimeSlot || isBookingPending}
+            className="w-full"
+          >
+            {isBookingPending ? 'Booking...' : 'Book Selected Time'}
+          </Button>
+
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+              📅 Manual Booking
+            </h3>
+            <p className="text-xs text-blue-800 dark:text-blue-200">
+              Select specific consultant and time slot based on availability
             </p>
-            <div className="flex justify-center gap-4 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Booked: {autoBookedConsultants.size}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span>Scanning: {monitoringConsultants.size}</span>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
