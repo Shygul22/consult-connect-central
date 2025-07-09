@@ -27,6 +27,7 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
     .select('id, full_name, is_active');
 
   if (profilesError) throw profilesError;
+  if (!profiles || profiles.length === 0) return [];
 
   const { data: userRoles, error: rolesError } = await supabase
     .from('user_roles')
@@ -40,7 +41,7 @@ const fetchUsersWithRoles = async (): Promise<UserWithRoles[]> => {
 
   const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
     const authUser = authUsers.users.find(u => u.id === profile.id);
-    const roles = userRoles.filter(ur => ur.user_id === profile.id).map(ur => ur.role);
+    const roles = userRoles?.filter(ur => ur.user_id === profile.id).map(ur => ur.role) || [];
     
     return {
       id: profile.id,
