@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navItems = [
@@ -60,7 +60,6 @@ export function InteractiveNavigation() {
           to="/" 
           className="flex items-center gap-2 text-xl font-bold transition-colors hover:text-primary/90"
         >
-          <Heart className="h-7 w-7 text-calming-green animate-calm-pulse" />
           <span className="font-serif">ZenJourney</span>
         </Link>
 
