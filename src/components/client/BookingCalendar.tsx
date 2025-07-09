@@ -159,8 +159,9 @@ export const BookingCalendar = ({ consultants, preSelectedConsultantId, onBookin
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-sm text-muted-foreground">
-                  No available slots for selected date
+                <div className="text-center py-6 text-sm text-muted-foreground space-y-2">
+                  <div>No available slots for {format(selectedDate, 'PPP')}</div>
+                  <div className="text-xs opacity-75">Try selecting a different date or consultant</div>
                 </div>
               )}
             </div>
