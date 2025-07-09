@@ -28,6 +28,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Contact from "./pages/Contact";
 import UpdatePasswordPage from "./pages/UpdatePasswordPage";
+import ClientPage from "./pages/ClientPage";
 import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -55,7 +56,7 @@ const AppLayout = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const publicPaths = ['/', '/consultants', '/contact', '/privacy', '/terms', '/auth', '/update-password'];
+  const publicPaths = ['/', '/client', '/consultants', '/contact', '/privacy', '/terms', '/auth', '/update-password'];
   const isPublicPage = publicPaths.includes(location.pathname);
 
   const showLandingHeader = isPublicPage && !user;
@@ -67,6 +68,7 @@ const AppLayout = () => {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/client" element={<ClientPage />} />
           <Route path="/consultants" element={<ConsultantsPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

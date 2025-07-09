@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 interface HeroVariation {
   id: string;
@@ -101,7 +102,7 @@ export function DynamicHero() {
 
         <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
           <Button asChild size="lg" className="text-lg px-8 py-6 bg-therapy-gradient hover:opacity-90 transform hover:scale-105 transition-all duration-300">
-            <a href="/#services">📘 Book a Career Clarity Session</a>
+            <Link to="/client">📘 Book a Career Clarity Session</Link>
           </Button>
           <Button asChild size="lg" variant="secondary" className="text-lg px-8 py-6 bg-white/20 backdrop-blur-sm hover:bg-white/30 transform hover:scale-105 transition-all duration-300">
             <a href="https://wa.me/919092406569" target="_blank" rel="noopener noreferrer">

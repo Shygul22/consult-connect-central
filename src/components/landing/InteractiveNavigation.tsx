@@ -79,7 +79,7 @@ export function InteractiveNavigation() {
             </button>
           ))}
           <Button asChild className="bg-therapy-gradient hover:opacity-90 ml-4">
-            <Link to="/auth">Begin Your Journey</Link>
+            <Link to="/client">Begin Your Journey</Link>
           </Button>
         </nav>
 
@@ -114,7 +114,7 @@ export function InteractiveNavigation() {
               </button>
             ))}
             <Button asChild className="w-full bg-therapy-gradient hover:opacity-90 mt-4">
-              <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link to="/client" onClick={() => setIsMobileMenuOpen(false)}>
                 Begin Your Journey
               </Link>
             </Button>
