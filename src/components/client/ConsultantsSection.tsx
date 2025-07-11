@@ -1,5 +1,5 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, MessageCircle, Award, Users, Clock, CheckCircle } from 'lucide-react';
+import { Star, Calendar, MessageCircle, Award, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -26,96 +23,11 @@ const fetchAllConsultants = async (): Promise<Profile[]> => {
   return data || [];
 };
 
-const checkAvailabilityAndAutoBook = async (consultantId: string, userId: string) => {
-  // Check if consultant has available slots
-  const { data: availability, error } = await supabase
-    .from('consultant_availability')
-    .select('*')
-    .eq('consultant_id', consultantId)
-    .eq('is_booked', false)
-    .gte('start_time', new Date().toISOString())
-    .order('start_time', { ascending: true })
-    .limit(1);
-
-  if (error || !availability || availability.length === 0) {
-    return null;
-  }
-
-  // Auto-book the first available slot
-  const availableSlot = availability[0];
-  const { data: booking, error: bookingError } = await supabase
-    .from('bookings')
-    .insert({
-      client_id: userId,
-      consultant_id: consultantId,
-      availability_id: availableSlot.id,
-      start_time: availableSlot.start_time,
-      end_time: availableSlot.end_time,
-      type: 'online',
-      status: 'pending',
-    })
-    .select()
-    .single();
-
-  if (bookingError) {
-    throw new Error(bookingError.message);
-  }
-
-  // Mark availability as booked
-  await supabase
-    .from('consultant_availability')
-    .update({ is_booked: true })
-    .eq('id', availableSlot.id);
-
-  return booking;
-};
-
 export const ConsultantsSection = () => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [autoBookedConsultants, setAutoBookedConsultants] = useState<Set<string>>(new Set());
-
   const { data: consultants, isLoading } = useQuery({
     queryKey: ['consultants'],
     queryFn: fetchAllConsultants,
   });
-
-  const { mutate: autoBookConsultant } = useMutation({
-    mutationFn: ({ consultantId }: { consultantId: string }) => {
-      if (!user) throw new Error('User not authenticated');
-      return checkAvailabilityAndAutoBook(consultantId, user.id);
-    },
-    onSuccess: (booking, { consultantId }) => {
-      if (booking) {
-        const consultant = consultants?.find(c => c.id === consultantId);
-        setAutoBookedConsultants(prev => new Set(prev).add(consultantId));
-        toast.success('Auto-booked with available consultant!', {
-          description: `Automatically booked with ${consultant?.full_name}`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
-      }
-    },
-    onError: (error: Error) => {
-      toast.error('Auto-booking failed', {
-        description: error.message,
-      });
-    },
-  });
-
-  // Auto-check for available consultants every 30 seconds
-  useEffect(() => {
-    if (!user || !consultants) return;
-
-    const interval = setInterval(() => {
-      consultants.forEach(consultant => {
-        if (!autoBookedConsultants.has(consultant.id)) {
-          autoBookConsultant({ consultantId: consultant.id });
-        }
-      });
-    }, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [user, consultants, autoBookConsultant, autoBookedConsultants]);
 
   if (isLoading) {
     return (
@@ -189,7 +101,20 @@ export const ConsultantsSection = () => {
                       {consultant.business_name}
                     </p>
                     
-                    <div className="flex justify-end">
+                    <div className="flex items-center gap-1 mb-3">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-medium">4.8</span>
+                      <span className="text-xs text-muted-foreground">(24)</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button asChild size="sm" className="h-7 text-xs">
+                        <Link to="/booking" state={{ consultant }}>
+                          <Calendar className="mr-1 h-3 w-3" />
+                          Book
+                        </Link>
+                      </Button>
+                      
                       <Button asChild variant="outline" size="sm" className="h-7 text-xs">
                         <Link to="/chat" state={{ consultant }}>
                           <MessageCircle className="mr-1 h-3 w-3" />
